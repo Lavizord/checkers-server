@@ -73,7 +73,7 @@ func FetchWalletBallance(session *models.Session, redis *redisdb.RedisClient) (i
 	return walletBalance, nil
 }
 
-func CreatePlayer(redis *redisdb.RedisClient, session *models.Session) (*models.Player, bool, error) {
+func CreatePlayer(redis *redisdb.RedisClient, session *models.Session) (*models.Player, bool, bool, error) {
 	var player *models.Player
 	var wasdisconnected bool
 	wasdisconnected = false
@@ -86,32 +86,54 @@ func CreatePlayer(redis *redisdb.RedisClient, session *models.Session) (*models.
 			ID:                 discPlayer.ID,
 			Token:              discPlayer.Token,
 			Name:               discPlayer.Name,
+			SelectedBet:        discPlayer.SelectedBet,
 			SessionID:          discPlayer.SessionID,
 			Currency:           session.Currency,
 			Status:             models.StatusInGame,
 			GameID:             discPlayer.GameID,
-			WriteChan:          make(chan []byte),
 			OperatorIdentifier: session.OperatorIdentifier,
 		}
-	} else {
-		existingPlayer, _ := redis.GetPlayer(session.ID)
-		if existingPlayer != nil {
-			log.Println("Session with active player.")
-			return nil, wasdisconnected, fmt.Errorf("session with active player")
-		}
-		newPlayer := &models.Player{
-			ID:                 session.ID,
-			Token:              session.Token,
-			Name:               session.PlayerName,
-			SessionID:          session.ID,
-			Currency:           session.Currency,
-			Status:             models.StatusOnline,
-			WriteChan:          make(chan []byte),
-			OperatorIdentifier: session.OperatorIdentifier,
-		}
-		player = newPlayer
-		//redis.AddPlayer(player) // Since its a new player, we add it to redis.
+		redis.AddPlayer(player)
+		return player, wasdisconnected, false, nil
 	}
+
+	discPlayer = redis.GetDisconnectedInQueuePlayerData(session.ID)
+	if discPlayer != nil {
+		wasdisconnected = true
+		player = &models.Player{
+			ID:                 discPlayer.ID,
+			Token:              discPlayer.Token,
+			Name:               discPlayer.Name,
+			SelectedBet:        discPlayer.SelectedBet,
+			SessionID:          discPlayer.SessionID,
+			Currency:           session.Currency,
+			Status:             discPlayer.Status,
+			RoomID:             discPlayer.RoomID,
+			GameID:             "",
+			OperatorIdentifier: session.OperatorIdentifier,
+		}
+		redis.AddPlayer(player)
+		return player, wasdisconnected, true, nil
+	}
+
+	existingPlayer, _ := redis.GetPlayer(session.ID)
+	if existingPlayer != nil {
+		log.Println("Session with active player.")
+		return nil, wasdisconnected, false, fmt.Errorf("session with active player")
+	}
+
+	newPlayer := &models.Player{
+		ID:                 session.ID,
+		Token:              session.Token,
+		Name:               session.PlayerName,
+		SessionID:          session.ID,
+		Currency:           session.Currency,
+		Status:             models.StatusOnline,
+		OperatorIdentifier: session.OperatorIdentifier,
+	}
+	player = newPlayer
+	//redis.AddPlayer(player) // Since its a new player, we add it to redis.
+
 	redis.AddPlayer(player)
-	return player, wasdisconnected, nil
+	return player, wasdisconnected, false, nil
 }

@@ -115,6 +115,9 @@ func main() {
 		if redisClient != nil {
 			redisClient.CloseRedisClient()
 		}
+		if postgresClient != nil {
+			postgresClient.Close()
+		}
 	}()
 
 	router := mux.NewRouter()

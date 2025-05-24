@@ -30,7 +30,7 @@ func RouteMessages(message *messages.Message[json.RawMessage], client *Client, r
 		return
 
 	case "leave_room":
-		if client.player.Status != models.StatusInRoom {
+		if client.player.Status != models.StatusInRoom && client.player.Status != models.StatusInRoomReady {
 			msg, _ := messages.GenerateGenericMessage("invalid", "Can't issue a leave room when not in a Room.")
 			client.send <- msg
 			return
@@ -71,7 +71,7 @@ func handleLeaveQueue(client *Client, redis *redisdb.RedisClient) {
 	}
 	client.player.SetStatusOnline()
 	redis.UpdatePlayer(client.player) // This is important, we will only re-add players to a queue that are in queue.
-	redis.UpdatePlayersInQueueSet(client.player.ID, models.StatusOnline)
+	//redis.UpdatePlayersInQueueSet(client.player.ID, models.StatusOnline)
 	queueName := fmt.Sprintf("queue:%f", client.player.SelectedBet)
 	err := redis.RemovePlayerFromQueue(queueName, client.player)
 	if err != nil {
@@ -112,7 +112,7 @@ func handleReadyQueue(msg *messages.Message[json.RawMessage], client *Client, re
 	msgBytes, _ := messages.GenerateGenericMessage("info", "Processing 'ready_queue'")
 	client.send <- msgBytes
 	// we update our player to redis.
-	redis.UpdatePlayersInQueueSet(client.player.ID, client.player.Status)
+	//redis.UpdatePlayersInQueueSet(client.player.ID, client.player.Status)
 	err := redis.UpdatePlayer(client.player)
 	if err != nil {
 		log.Printf("Error updating player to Redis: %v\n", err)

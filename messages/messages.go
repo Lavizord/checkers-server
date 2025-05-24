@@ -150,12 +150,28 @@ func GenerateConnectedMessage(player models.Player, balance int64) ([]byte, erro
 	return NewMessage("connected", connectInfo)
 }
 
-func GeneratePairedMessage(player1, player2 *models.Player, roomID string, color int, winnings int64) ([]byte, error) {
+func GeneratePairedMessage(player1, player2 *models.Player, roomID string, color int, winnings int64, timer int) ([]byte, error) {
 	pairedValue := models.PairedValue{
-		Color:    color,
-		Opponent: player2.Name,
-		RoomID:   roomID,
-		Winnings: float64(winnings) / 100,
+		Color:         color,
+		Opponent:      player2.Name,
+		RoomID:        roomID,
+		Winnings:      float64(winnings) / 100,
+		Timer:         timer,
+		PlayerReady:   player1.Status == models.StatusInRoomReady,
+		OpponentReady: player2.Status == models.StatusInRoomReady,
+	}
+	return NewMessage("paired", pairedValue)
+}
+
+func GeneratePairedMessageFromP2Name(p2Name, roomID string, playerReady, opponentReady bool, color int, winnings int64, timer int) ([]byte, error) {
+	pairedValue := models.PairedValue{
+		Color:         color,
+		Opponent:      p2Name,
+		RoomID:        roomID,
+		Winnings:      float64(winnings) / 100,
+		Timer:         timer,
+		PlayerReady:   playerReady,
+		OpponentReady: opponentReady,
 	}
 	return NewMessage("paired", pairedValue)
 }

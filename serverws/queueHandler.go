@@ -123,7 +123,7 @@ func (qh *QueueHandler) parseBetValue() (float64, error) {
 func (qh *QueueHandler) updatePlayerState(betValue float64) {
 	qh.Client.player.SelectedBet = betValue
 	qh.Client.player.Status = models.StatusInQueue
-	qh.RedisClient.UpdatePlayersInQueueSet(qh.Client.player.ID, models.StatusInQueue)
+	//qh.RedisClient.UpdatePlayersInQueueSet(qh.Client.player.ID, models.StatusInQueue)
 	qh.RedisClient.UpdatePlayer(qh.Client.player)
 }
 

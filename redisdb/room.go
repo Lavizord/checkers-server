@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log"
 
 	"github.com/Lavizord/checkers-server/models"
 
@@ -105,7 +106,6 @@ func (r *RedisClient) GetRoomsByBetValue(BetValue float64) ([]models.Room, error
 	return rooms, nil
 }
 
-// D
 func (r *RedisClient) GetEmptyRoomsByBetValue(BetValue float64) ([]models.Room, error) {
 	ctx := context.Background()
 	zsetKey := "rooms_by_bid"
@@ -134,4 +134,13 @@ func (r *RedisClient) GetEmptyRoomsByBetValue(BetValue float64) ([]models.Room, 
 		}
 	}
 	return rooms, nil
+}
+
+func (r *RedisClient) PublishToRoomPubSub(roomID string, message string) error {
+	err := r.Client.Publish(context.Background(), "roompubsub:"+roomID, message).Err()
+	if err != nil {
+		log.Println("Publish error:", err)
+		return err
+	}
+	return nil
 }

@@ -118,6 +118,28 @@ func (r *RedisClient) SaveDisconnectSessionPlayerData(playerData models.Player, 
 	//fmt.Println("Player saved to disconnected list with key:", key)
 }
 
+// This should be called when a disconnect happens with a player in qeuey, it will save the
+// session and some player data, to easily identify the players players.
+func (r *RedisClient) SaveDisconnectInQueuePlayerData(playerData *models.Player) {
+	if playerData.DisconnectedAt == 0 { // Check if it's unset
+		playerData.DisconnectedAt = time.Now().Unix() // Set current timestamp
+	}
+
+	playerJSON, err := json.Marshal(playerData)
+	if err != nil {
+		log.Println("Error marshaling player:", err)
+		return
+	}
+	key := fmt.Sprintf("players_disc_in_queue:%s", playerData.SessionID)
+
+	err = r.Client.Set(context.Background(), key, playerJSON, 0).Err()
+	if err != nil {
+		log.Println("Error saving player disconnect in queue to Redis:", err)
+		return
+	}
+	//fmt.Println("Player saved to disconnected list with key:", key)
+}
+
 // This retrieves our player disconnect, should be used to check if the player that just logged in is in a match.
 func (r *RedisClient) GetDisconnectedPlayerData(sessionID string) *models.Player {
 	key := fmt.Sprintf("players_disconnected:%s", sessionID)
@@ -129,7 +151,7 @@ func (r *RedisClient) GetDisconnectedPlayerData(sessionID string) *models.Player
 		return nil
 	}
 
-	// Unmarshal the JSON data into a GamePlayer struct
+	// Unmarshal the JSON data into a Player struct
 	var player models.Player
 	err = json.Unmarshal([]byte(playerJSON), &player)
 	if err != nil {
@@ -138,6 +160,42 @@ func (r *RedisClient) GetDisconnectedPlayerData(sessionID string) *models.Player
 	}
 
 	return &player
+}
+
+// This retrieves our player disconnect, should be used to check if the player that just logged in is in a match.
+func (r *RedisClient) GetDisconnectedInQueuePlayerData(sessionID string) *models.Player {
+	key := fmt.Sprintf("players_disc_in_queue:%s", sessionID)
+
+	// Get the JSON data from Redis
+	playerJSON, err := r.Client.Get(context.Background(), key).Result()
+	if err != nil {
+		log.Println("Error retrieving player disconnected in queuefrom Redis:", err)
+		return nil
+	}
+
+	// Unmarshal the JSON data into a Player  struct
+	var player models.Player
+	err = json.Unmarshal([]byte(playerJSON), &player)
+	if err != nil {
+		log.Println("Error unmarshaling player disconnected in queue JSON:", err)
+		return nil
+	}
+
+	return &player
+}
+
+func (r *RedisClient) DeleteDisconnectedInQueuePlayerData(sessionID string) error {
+	key := fmt.Sprintf("players_disc_in_queue:%s", sessionID)
+
+	// Delete the key from Redis
+	err := r.Client.Del(context.Background(), key).Err()
+	if err != nil {
+		log.Println("Error deleting player disconnected in queue from Redis:", err)
+		return err
+	}
+
+	//fmt.Println("Player session deleted with key:", key)
+	return nil
 }
 
 func (r *RedisClient) DeleteDisconnectedPlayerSession(sessionID string) error {

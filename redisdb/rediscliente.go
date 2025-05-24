@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
-	"strings"
 	"sync"
 	"time"
 
@@ -227,44 +226,4 @@ func (r *RedisClient) RemovePlayerFromQueue(queueName string, player *models.Pla
 	}
 
 	return nil
-}
-
-func (r *RedisClient) StartSessionCleanup(interval time.Duration) {
-	go func() {
-		ticker := time.NewTicker(interval)
-		defer ticker.Stop()
-
-		for range ticker.C {
-			r.cleanupExpiredSessions()
-		}
-	}()
-}
-
-func (r *RedisClient) cleanupExpiredSessions() {
-	ctx := context.Background()
-	iter := r.Client.Scan(ctx, 0, "session:*", 0).Iterator()
-
-	for iter.Next(ctx) {
-		sessionKey := iter.Val()
-		data, err := r.Client.HGet(ctx, sessionKey, "data").Result()
-		if err != nil {
-			log.Printf("[RedisClient] (Session) - Failed to fetch session data: %v\n", err)
-			continue
-		}
-		var session models.Session
-		if err := json.Unmarshal([]byte(data), &session); err != nil {
-			log.Printf("[RedisClient] (Session) - Failed to deserialize session: %v\n", err)
-			continue
-		}
-		if session.IsTokenExpired() {
-			parts := strings.Split(sessionKey, ":")
-			if len(parts) > 1 {
-				sessionID := parts[1]
-				r.RemoveSession(sessionID)
-			}
-		}
-	}
-	if err := iter.Err(); err != nil {
-		log.Printf("[RedisClient] (Session) - Error iterating Redis keys: %v\n", err)
-	}
 }

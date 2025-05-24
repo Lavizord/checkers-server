@@ -27,7 +27,7 @@ func main() {
 	// we subscribe to our redis broadcast channel.
 	hub.SubscribeBroadcast()
 
-	http.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
+	http.HandleFunc("/ws/checkers", func(w http.ResponseWriter, r *http.Request) {
 		serveWs(hub, w, r)
 	})
 

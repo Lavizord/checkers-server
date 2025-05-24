@@ -72,30 +72,30 @@ func (r *RedisClient) RemovePlayer(playerID string) error {
 	return r.Client.HDel(context.Background(), "players", playerID).Err()
 }
 
-func (r *RedisClient) UpdatePlayersInQueueSet(playerID string, newStatus models.PlayerStatus) error {
-	// Update the "players_in_queue" set based on the new status
-	if newStatus == models.StatusInQueue {
-		// Add player to the queue set
-		err := r.Client.SAdd(context.Background(), "players_in_queue", playerID).Err()
-		if err != nil {
-			return fmt.Errorf("[RedisClient] - failed to add player to players_in_queue set: %v", err)
-		}
-	} else {
-		// Remove player from the queue set
-		err := r.Client.SRem(context.Background(), "players_in_queue", playerID).Err()
-		if err != nil {
-			return fmt.Errorf("[RedisClient] - failed to remove player from players_in_queue set: %v", err)
-		}
-	}
+// func (r *RedisClient) UpdatePlayersInQueueSet(playerID string, newStatus models.PlayerStatus) error {
+// 	// Update the "players_in_queue" set based on the new status
+// 	if newStatus == models.StatusInQueue {
+// 		// Add player to the queue set
+// 		err := r.Client.SAdd(context.Background(), "players_in_queue", playerID).Err()
+// 		if err != nil {
+// 			return fmt.Errorf("[RedisClient] - failed to add player to players_in_queue set: %v", err)
+// 		}
+// 	} else {
+// 		// Remove player from the queue set
+// 		err := r.Client.SRem(context.Background(), "players_in_queue", playerID).Err()
+// 		if err != nil {
+// 			return fmt.Errorf("[RedisClient] - failed to remove player from players_in_queue set: %v", err)
+// 		}
+// 	}
 
-	return nil
-}
+// 	return nil
+// }
 
-func (r *RedisClient) GetNumPlayersInQueue() (int64, error) {
-	// Use SCARD to get the number of players in the "players_in_queue" set
-	numPlayers, err := r.Client.SCard(context.Background(), "players_in_queue").Result()
-	if err != nil {
-		return 0, fmt.Errorf("[RedisClient] - failed to get number of players in queue: %v", err)
-	}
-	return numPlayers, nil
-}
+// func (r *RedisClient) GetNumPlayersInQueue() (int64, error) {
+// 	// Use SCARD to get the number of players in the "players_in_queue" set
+// 	numPlayers, err := r.Client.SCard(context.Background(), "players_in_queue").Result()
+// 	if err != nil {
+// 		return 0, fmt.Errorf("[RedisClient] - failed to get number of players in queue: %v", err)
+// 	}
+// 	return numPlayers, nil
+// }
